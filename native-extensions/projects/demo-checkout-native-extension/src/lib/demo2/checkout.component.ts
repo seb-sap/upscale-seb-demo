@@ -16,6 +16,7 @@ import { ComponentComponent } from './components/component.components';
     styleUrls: ['./checkout.component.scss'],
 })
 export class CheckoutComponent extends ComponentComponent {
+    version = '0.1';
     paymentConfigs: Array<ActiveConfiguration> = [];
     loading = true;
 

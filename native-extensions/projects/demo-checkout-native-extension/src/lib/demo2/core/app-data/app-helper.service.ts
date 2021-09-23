@@ -17,7 +17,7 @@ import { Templates } from '@upscale/web-storefront-sdk';
 import { concatMap, finalize, map, mergeMap, shareReplay, switchMap, tap } from 'rxjs/operators';
 
 import { AltExperienceData, AppData, HelpfulLanguagePack, toHelpfulLanguagePack } from '../app-data.model';
-import { LocaleService } from '../localization';
+import { LocaleService } from '../localization/locale.service';
 import { NULL, tuple } from '../util';
 
 import { AltExperienceHandler } from './alt-experience-handler.interface';

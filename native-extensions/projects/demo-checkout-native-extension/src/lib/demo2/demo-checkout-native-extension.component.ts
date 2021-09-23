@@ -23,6 +23,7 @@ export class DemoCheckoutNativeExtensionComponent2 extends ComponentComponent im
 		// private router: LocaleRoutingService
 	) {
 		super();
+		console.log('DemoCheckoutNativeExtensionComponent2::ctor');
 		this.paymentConfigurationService
 			.getAllPaymentConfigurations()
 			.pipe(

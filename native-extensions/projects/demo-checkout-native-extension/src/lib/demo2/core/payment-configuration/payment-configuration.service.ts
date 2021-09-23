@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of, throwError } from 'rxjs';
 import { catchError, concatMap, map, retry, shareReplay, tap } from 'rxjs/operators';
 
-import { AppDataService } from '../app-data';
+import { AppDataService } from '../app-data/app-data.service';
 
 @Injectable({
 	providedIn: 'root',
@@ -34,6 +34,8 @@ export class PaymentConfigurationService {
 	}
 
 	manualFetchPaymentConfigs(): Observable<Array<ActiveConfiguration>> {
+		// this.appDataService.getAppData();
+		// return of(null);
 		return this.appDataService.getAppData().pipe(
 			tap(ad => {
 				this.appExperienceId = ad.experienceId;

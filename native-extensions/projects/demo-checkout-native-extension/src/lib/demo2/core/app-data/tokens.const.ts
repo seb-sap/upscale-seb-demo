@@ -7,3 +7,5 @@ import { InjectionToken } from '@angular/core';
 export const BUNDLE_TOKEN = new InjectionToken<IPwaBundleConfiguration>('App configuration.');
 
 export const TEMPLATES_TOKEN = new InjectionToken<Array<Template>>('Templates.');
+
+// export const BUNDLE_ID = new InjectionToken<string>('bundle-id');

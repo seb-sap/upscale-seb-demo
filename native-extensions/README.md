@@ -3,6 +3,11 @@
 Search for `// FIXME` in code to see places where code was not fully imported from PWA.
 The tsconfig.lib.json - enableIvy must be set to true to be able to run "npm run demo" successfully.
 
+```
+strictMetadataEmit is set to false
+When set to true, error in CookieStorageService, unable to inject Document Symbol
+```
+
 From Native Extension:
 ```sh
 npm run demo

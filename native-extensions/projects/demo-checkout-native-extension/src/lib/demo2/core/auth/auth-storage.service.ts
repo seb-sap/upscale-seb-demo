@@ -6,8 +6,8 @@ import { AuthValues } from '@upscale/web-storefront-sdk';
 import { Observable, ReplaySubject } from 'rxjs';
 
 import { ApplicationLoggerService } from '../application-logger/application-logger.service';
-import { CookieStorageService } from '../cookie-storage';
-import { LocalStorageService } from '../local-storage';
+import { CookieStorageService } from '../cookie-storage/cookie-storage.service';
+import { LocalStorageService } from '../local-storage/local-storage.service';
 
 import { IAuthStorageService } from './auth-storage.service.interface';
 

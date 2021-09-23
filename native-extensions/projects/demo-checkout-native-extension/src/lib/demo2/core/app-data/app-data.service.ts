@@ -1,17 +1,18 @@
 import {
 	AttributeService,
 	CustomAttributeConfig,
+	// AttributeService,
+	// CustomAttributeConfig,
 	Edition,
 	EditionService,
 	ErrorSchema,
 	GlobalSettingsService,
-	IPwaBundleConfiguration,
 	InventoryService,
+	IPwaBundleConfiguration,
 	LanguagePack,
 	OperationPreference,
 	PagedInventoryLocationRequest,
 	PaymentProviderService,
-	PaymentService,
 	PriceCurrencyService,
 	QuotaType,
 	ShippingService,
@@ -19,34 +20,47 @@ import {
 	Template,
 	UpscaleGlobalSettings,
 	VariantAttributeConfig,
+	// ErrorSchema,
+	// GlobalSettingsService,
+	// IPwaBundleConfiguration,
+	// InventoryService,
+	// LanguagePack,
+	// OperationPreference,
+	// PagedInventoryLocationRequest,
+	// PaymentProviderService,
+	// PriceCurrencyService,
+	// QuotaType,
+	// ShippingService,
+	// TaxService,
+	// Template,
+	// UpscaleGlobalSettings,
+	// VariantAttributeConfig,
 } from '@caas/service-client-angular';
 import { Injectable } from '@angular/core';
-import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, concatMap, map, mergeMap, shareReplay, tap } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
 
 import { Templates } from '@upscale/web-storefront-sdk';
 
 import { AppData } from '../app-data.model';
-import { AuthStorageService } from '../auth/auth-storage.service';
-import { CookieStorageService } from '../cookie-storage';
-import { emitValueOrError, tuple } from '../util';
+import { CookieStorageService } from '../cookie-storage/cookie-storage.service';
 
 import { AppHelperService } from './app-helper.service';
-import { ApplicationConfig } from '.';
+import { AuthStorageService } from '../auth/auth-storage.service';
+import { emitValueOrError, tuple } from '../util';
+import { catchError, concatMap, map, mergeMap, shareReplay, tap } from 'rxjs/operators';
 
 /**
  * Retrieves AppData required for application to function.
  *
  * Redirects from root to the home-aliased template
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class AppDataService {
 	private request: Observable<AppData>;
 
 	constructor(
 		protected editionService: EditionService,
 		protected attributeService: AttributeService,
-		protected applicationConfig: ApplicationConfig,
 		protected inventoryService: InventoryService,
 		protected shippingService: ShippingService,
 		protected globalSettingsService: GlobalSettingsService,
@@ -54,9 +68,8 @@ export class AppDataService {
 		protected cookieStorageService: CookieStorageService,
 		protected authStorageService: AuthStorageService,
 		protected paymentProviderService: PaymentProviderService,
-		protected paymentService: PaymentService,
 		protected taxService: TaxService,
-		protected priceCurrencyService: PriceCurrencyService
+		protected priceCurrencyService: PriceCurrencyService,
 	) {}
 
 	getAppData(): Observable<AppData> {
@@ -276,4 +289,5 @@ export class AppDataService {
 		};
 		return globalSettings;
 	}
+
 }
