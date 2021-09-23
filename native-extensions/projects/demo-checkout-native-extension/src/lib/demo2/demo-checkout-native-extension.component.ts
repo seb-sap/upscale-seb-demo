@@ -68,7 +68,7 @@ export class DemoCheckoutNativeExtensionComponent2 extends ComponentComponent im
 				error => {
 					// this.genericAlertDialog.createErrorDialog(); // FIXME
 					// this.router.navigate([aliasRoute.get(AliasType.CART) ?? '']);
-          // this.router.navigate(['cart']); // FIXME?
+          			// this.router.navigate(['cart']); // FIXME?
 
 					if (error?.message === 'PAYMENT_CONFIGS_EMPTY') {
 						this.applicationLogger.log('Payment configs empty');

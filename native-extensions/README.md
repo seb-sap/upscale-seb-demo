@@ -20,6 +20,13 @@ rm -rf ./node_modules/demo-checkout && npm cache clear --force && npm i demo-che
 ```
 
 ```
+To be removed:
+- Google + Apple pay?
+- APM?
+```
+
+Components to remove:
+```
 -OpenPaymentCheckout
 	- CheckoutProcess
 		x AlternatePaymentMethodButtonGroup
