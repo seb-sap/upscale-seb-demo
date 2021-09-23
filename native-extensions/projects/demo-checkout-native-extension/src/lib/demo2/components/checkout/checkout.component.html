@@ -1,0 +1,10 @@
+<pre>checkout.component - version: {{version}}</pre>
+<pre>merchantId:{{ paymentConfigs[0].merchantId }} - mode:{{ paymentConfigs[0].mode }} - provider:{{ paymentConfigs[0].provider }} </pre>
+<ng-container *ngIf="!loading">
+	checkout ready
+	<!-- <upscale-open-payment-checkout
+		[appData]="appData"
+		[component]="component"
+		[paymentConfigs]="paymentConfigs"
+	></upscale-open-payment-checkout> -->
+</ng-container>

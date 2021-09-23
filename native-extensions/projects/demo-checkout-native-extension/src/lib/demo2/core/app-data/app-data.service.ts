@@ -113,7 +113,7 @@ export class AppDataService {
 				this.handleSharedCart(appData.sharedCartGroupId);
 
 				// set app properties from bundle configuration
-				appConfig.payMerchants?.forEach(payMerchant => {
+				appConfig.payMerchants?.forEach(payMerchant => { // FIXME: can be removed?
 					switch (payMerchant.provider) {
 						case 'APPLE': {
 							appData.applePayEnabled = payMerchant.oneTapBuyEnabled;

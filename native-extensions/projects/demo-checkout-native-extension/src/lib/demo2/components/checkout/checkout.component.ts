@@ -3,12 +3,12 @@ import { Component } from '@angular/core';
 import { concatMap, finalize, map, take, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 
-import { ApplicationLoggerService } from './core/application-logger/application-logger.service';
+import { ApplicationLoggerService } from '../../core/application-logger/application-logger.service';
 // import { GenericAlertDialogService } from './core/generic-alert-dialog/generic-alert-dialog.service';
 // import { LocaleRoutingService } from './core/localization';
-import { PaymentConfigurationService } from './core/payment-configuration/payment-configuration.service';
+import { PaymentConfigurationService } from '../../core/payment-configuration/payment-configuration.service';
 // import { aliasRoute } from 'app/app-routing/alias-route.const';
-import { ComponentComponent } from './components/component.components';
+import { ComponentComponent } from '../component.components';
 
 @Component({
     selector: 'upscale-checkout',
@@ -27,6 +27,7 @@ export class CheckoutComponent extends ComponentComponent {
         // private router: LocaleRoutingService // FIXME
     ) {
         super();
+        console.log('CheckoutComponent::ctor');
         this.paymentConfigurationService
             .getAllPaymentConfigurations()
             .pipe(
