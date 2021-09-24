@@ -7,7 +7,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 export class DemoCheckoutNativeExtensionComponent2 implements OnInit, OnDestroy {
 
   constructor() {
-	console.log('DemoCheckoutNativeExtensionComponent2::ctor');
+	  console.log('DemoCheckoutNativeExtensionComponent2::ctor');
   }
 
   ngOnInit(): void {

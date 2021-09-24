@@ -3,12 +3,11 @@ import { Component } from '@angular/core';
 import { concatMap, finalize, map, take, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 
-import { ApplicationLoggerService } from '../../core/application-logger/application-logger.service';
-// import { GenericAlertDialogService } from './core/generic-alert-dialog/generic-alert-dialog.service';
-// import { LocaleRoutingService } from './core/localization';
-import { PaymentConfigurationService } from '../../core/payment-configuration/payment-configuration.service';
-// import { aliasRoute } from 'app/app-routing/alias-route.const';
+import { ApplicationLoggerService } from '../../pwa-shared/application-logger.service';
 import { ComponentComponent } from '../component.components';
+import { PaymentConfigurationService } from '../../pwa-shared/payment-configuration.service';
+import { GenericAlertDialogService } from '../../pwa-shared/generic-alert-dialog.service';
+import { LocaleRoutingService } from '../../pwa-shared/locale-routing.service';
 
 @Component({
     selector: 'upscale-checkout',
@@ -16,15 +15,15 @@ import { ComponentComponent } from '../component.components';
     styleUrls: ['./checkout.component.scss'],
 })
 export class CheckoutComponent extends ComponentComponent {
-    version = '0.1';
+    version = '0.2.0';
     paymentConfigs: Array<ActiveConfiguration> = [];
     loading = true;
 
     constructor(
         private paymentConfigurationService: PaymentConfigurationService,
         private applicationLogger: ApplicationLoggerService,
-        // private genericAlertDialog: GenericAlertDialogService, // FIXME
-        // private router: LocaleRoutingService // FIXME
+        private genericAlertDialog: GenericAlertDialogService,
+        private router: LocaleRoutingService,
     ) {
         super();
         console.log('CheckoutComponent::ctor');
@@ -70,8 +69,8 @@ export class CheckoutComponent extends ComponentComponent {
                     this.paymentConfigs = configs;
                 },
                 error => {
-                    // this.genericAlertDialog.createErrorDialog(); // FIXME
-                    // this.router.navigate(['cart']); // FIXME
+                    this.genericAlertDialog.createErrorDialog();
+                    this.router.navigate(['cart']); // FIXME: expose const from PWA
 
                     if (error?.message === 'PAYMENT_CONFIGS_EMPTY') {
                         this.applicationLogger.log('Payment configs empty');
