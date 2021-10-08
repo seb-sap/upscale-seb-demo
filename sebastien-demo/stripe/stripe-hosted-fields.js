@@ -5,11 +5,12 @@
         DEBUG && console.log(data);
     }
 
+    // Next steps:
+    // More order data in initial request -> metadata POST payment_intent in OPF
+
     const initStripe = () => {
-        // TODO: use variables
-        const stripe = Stripe('pk_test_...', {
+        const stripe = Stripe('${vars.publickey}', {
             locale: 'en-US', // TODO: get locale from customer and/or order?
-            betas: ['checkout_beta_4'] // TOOD: remove
         });
         const elements = stripe.elements();
         const style = {
@@ -35,7 +36,17 @@
         });
     }
 
-    const doSubmit = (paymentIntentId, paymentMethodId) => {
+    // https://stripe.com/docs/js/payment_intents/confirm_card_payment
+    const doSubmit = (stripe, paymentIntentId, paymentMethodId, secret) => {
+        stripe.confirmCardPayment(secret, {
+            payment_method: paymentMethodId
+        }).then((result) => {
+            doSubmitBackend(stripe, paymentIntentId, paymentMethodId, secret);
+        });
+    }
+
+    // FIXME: not used
+    const doSubmitBackend = (stripe, paymentIntentId, paymentMethodId, secret) => {
         Upscale.payments.submit({
             'additionalData': [{
                     'key': 'paymentIntent',
@@ -48,7 +59,33 @@
                     'key': 'customer',
                     'value': paymentIntent.customer
                 }*/
-            ]
+            ],
+            'submitPending': (response) => {
+                log('OPF - handling submitPending...');
+                log(response);
+
+                /*if (response) {
+                    if (response.customFields && response.customFields.length) {
+                        if (response.customFields['next_action']) {
+                            const nextAction = JSON.parse(response.customFields['next_action']);
+                            log('nextAction:');
+                            log(nextAction);
+                            if (nextAction && nextAction.type === 'redirect_to_url') {
+                                window.location = nextAction.redirect_to_url.url;
+                            }   
+                        }
+                    }
+                }*/
+
+                /*stripe
+                    .handleCardAction(secret)
+                    .then(function(result) {
+                        // Handle result.error or result.paymentIntent
+                        handleError(error);
+                        log('stripe handleCardAction successful');
+                        log(result);
+                    });*/
+            }
         });
     }
 
@@ -97,9 +134,9 @@
         const paymentForm = document.getElementById('payment-form');
         paymentForm.addEventListener('submit', function (ev) {
             ev.preventDefault();
-    
+            const secret = paymentForm.dataset.secret;
             // https://stripe.com/docs/js/payment_intents/retrieve_payment_intent
-            stripe.retrievePaymentIntent(paymentForm.dataset.secret).then(function (result) {
+            stripe.retrievePaymentIntent(secret).then(function (result) {
                 const hasError = handleError(result.error);
                 if (hasError) {
                     return;
@@ -122,7 +159,7 @@
                     */
                     // Doc: https://stripe.com/docs/js/payment_methods/create_payment_method
                     stripe
-                    .createPaymentMethod({
+                    .createPaymentMethod({ // TODO: create on back-end.
                         type: 'card',
                         card
                     })
@@ -132,7 +169,7 @@
                             return;
                         }
                         log('paymentMethod id:' + result.paymentMethod.id);
-                        doSubmit(paymentIntent.id, result.paymentMethod.id);
+                        doSubmit(stripe, paymentIntent.id, result.paymentMethod.id, secret);
                     });
                     
                 });
