@@ -1,53 +1,70 @@
-(function () {
+(function (Upscale, Stripe) {
     const DEBUG = true;
-
+    const VERSION = '0.0.1';
     const log = (data) => {
         DEBUG && console.log(data);
     }
 
-    // Next steps:
-    // More order data in initial request -> metadata POST payment_intent in OPF
-
+    /**
+     * Initialize stripe js - using Stripe Elements
+     */
     const initStripe = () => {
+        log('OPF - Stripe Hosted Fields - OPF script version:' + VERSION + ' - Stripe JS version:' + Stripe.version);
         const stripe = Stripe('${vars.publickey}', {
-            locale: 'en-US', // TODO: get locale from customer and/or order?
+            locale: 'auto',
         });
         const elements = stripe.elements();
         const style = {
             base: {
-                color: "#32325d", // TODO: add variable
+                color: "${vars.cardColor}",
             }
         };
         const card = elements.create("card", {
-            style: style
+            style
         });
         card.mount("#card-element");
+        card.on('change', function(event) {
+            handleError(event.error);
+        });
         return {
             stripe,
             card
         };
     }
 
-    const getUpscaleOrder = () => {
-        return Upscale.payments.global.getOrder([]).then(draftOrder => {
-            log('Draft order:');
-            log(draftOrder);
-            return draftOrder;
-        });
+    const toggleLoadIndicator = (showIndicator) => {
+        showIndicator ? Upscale.payments.startLoadIndicator(): Upscale.payments.stopLoadIndicator(); 
     }
 
-    // https://stripe.com/docs/js/payment_intents/confirm_card_payment
-    const doSubmit = (stripe, paymentIntentId, paymentMethodId, secret) => {
-        stripe.confirmCardPayment(secret, {
+    /**
+     * Confirm card payment, this will confirm the Stripe PaymentIntent with 3DS support.
+     * See https://stripe.com/docs/js/payment_intents/confirm_card_payment
+     * @param {object} stripe 
+     * @param {string} paymentIntentId
+     * @param {string} paymentMethodId 
+     * @param {string} secret
+     */
+    const confirmCardPayment = (stripe, paymentIntentId, paymentMethodId, secret) => {
+        return stripe.confirmCardPayment(secret, {
             payment_method: paymentMethodId
         }).then((result) => {
-            doSubmitBackend(stripe, paymentIntentId, paymentMethodId, secret);
+            const hasError = handleError(result.error);
+            if (hasError) {
+                Upscale.payments.global.throwPaymentError();
+                toggleLoadIndicator(false);
+                return;
+            }
+            return doSubmit(paymentIntentId, paymentMethodId);
         });
     }
 
-    // FIXME: not used
-    const doSubmitBackend = (stripe, paymentIntentId, paymentMethodId, secret) => {
-        Upscale.payments.submit({
+    /**
+     * Submit payment to OPF.
+     * @param {string} paymentIntentId 
+     * @param {string} paymentMethodId 
+     */
+    const doSubmit = (paymentIntentId, paymentMethodId) => {
+        return Upscale.payments.submit({
             'additionalData': [{
                     'key': 'paymentIntent',
                     'value': paymentIntentId
@@ -55,37 +72,7 @@
                     'key': 'paymentMethod',
                     'value': paymentMethodId
                 }
-                /*, {
-                    'key': 'customer',
-                    'value': paymentIntent.customer
-                }*/
-            ],
-            'submitPending': (response) => {
-                log('OPF - handling submitPending...');
-                log(response);
-
-                /*if (response) {
-                    if (response.customFields && response.customFields.length) {
-                        if (response.customFields['next_action']) {
-                            const nextAction = JSON.parse(response.customFields['next_action']);
-                            log('nextAction:');
-                            log(nextAction);
-                            if (nextAction && nextAction.type === 'redirect_to_url') {
-                                window.location = nextAction.redirect_to_url.url;
-                            }   
-                        }
-                    }
-                }*/
-
-                /*stripe
-                    .handleCardAction(secret)
-                    .then(function(result) {
-                        // Handle result.error or result.paymentIntent
-                        handleError(error);
-                        log('stripe handleCardAction successful');
-                        log(result);
-                    });*/
-            }
+            ]
         });
     }
 
@@ -93,8 +80,7 @@
         let displayError = document.getElementById('card-errors');
         if (error) {
             displayError.textContent = error.message;
-            log(error.message);
-            Upscale.payments.global.throwPaymentError(); // TODO: add error msg.
+            log('Stripe error: ' + error.message);
             return true;
         } else {
             displayError.textContent = '';
@@ -102,89 +88,93 @@
         }
     }
 
-    const updatePaymentIntent = (stripe, draftOrder, paymentIntent) => {
-        // https://stripe.com/docs/api/payment_intents/create#create_payment_intent-shipping
-        let updatedPaymentIntent = paymentIntent;
-        updatedPaymentIntent.metadata = {
-            customerNumber: draftOrder.customerNumber,
-            customerEmail: draftOrder.customerEmail
-        }
-        updatedPaymentIntent.shipping = {
-            address: {
-                city: draftOrder.shippingAddress.city,
-                country: draftOrder.shippingAddress.country,
-                line1: draftOrder.shippingAddress.addressLine1,
-                line2: draftOrder.shippingAddress.addressLine2,
-                // postal_code: draftOrder.shippingAddress.,
-                // state: draftOrder.shippingAddress.
-            },
-            name: `${draftOrder.shippingAddress.firstName} ${draftOrder.shippingAddress.lastName}`,
-        };
-        // update payment intent with data from order
-        // IntegrationError: You cannot call `stripe.updatePaymentIntent` without supplying an appropriate beta flag when initializing Stripe.js.
-        stripe.updatePaymentIntent(updatedPaymentIntent).then(updatedPaymentIntent => {
-            log('updatedPaymentIntent:');
-            log(updatedPaymentIntent);
-        });
-    }
-
-    // TODO: add customer to create intent POST request to avoid creating new intent for same orderId?
-
     const listenOnSubmit = (stripe, card) => {
         const paymentForm = document.getElementById('payment-form');
         paymentForm.addEventListener('submit', function (ev) {
             ev.preventDefault();
+            toggleLoadIndicator(true);
+
             const secret = paymentForm.dataset.secret;
             // https://stripe.com/docs/js/payment_intents/retrieve_payment_intent
             stripe.retrievePaymentIntent(secret).then(function (result) {
                 const hasError = handleError(result.error);
                 if (hasError) {
+                    Upscale.payments.global.throwPaymentError();
+                    toggleLoadIndicator(false);
                     return;
                 }
                 const paymentIntent = result.paymentIntent;
                 log('paymentIntent id:' + paymentIntent.id);
 
-                getUpscaleOrder().then(draftOrder => {
-                    // FIXME: not allowed (beta??)
-                    // updatePaymentIntent(stripe, draftOrder, paymentIntent);
-
-                    /*
-                    FIXME: should we call createPaymentMethod?
-                    From: https://stripe.com/docs/api/payment_methods/create
-                    "Instead of creating a PaymentMethod directly, we recommend using the PaymentIntents API to accept a payment immediately or the SetupIntent API to collect payment method details ahead of a future payment."
-                    if the payment_method specified, Stripe returns this error:
-                    "You cannot confirm this PaymentIntent because it's missing a payment method. You can either update the PaymentIntent with a payment method and then confirm it again, or confirm it again directly with a payment method."
-                    See https://dashboard.stripe.com/test/logs/req_sAwRRUXorXDThA
-                    payment_method is optional in create intend method: https://stripe.com/docs/api/payment_intents/create#create_payment_intent-payment_method
-                    */
-                    // Doc: https://stripe.com/docs/js/payment_methods/create_payment_method
-                    stripe
-                    .createPaymentMethod({ // TODO: create on back-end.
-                        type: 'card',
-                        card
-                    })
-                    .then(function (result) {
-                        const hasError = handleError(result.error);
-                        if (hasError) {
-                            return;
-                        }
-                        log('paymentMethod id:' + result.paymentMethod.id);
-                        doSubmit(stripe, paymentIntent.id, result.paymentMethod.id, secret);
+                // Doc: https://stripe.com/docs/js/payment_methods/create_payment_method
+                stripe.createPaymentMethod({
+                    type: 'card',
+                    card
+                }).then(function (result) {
+                    const hasError = handleError(result.error);
+                    if (hasError) {
+                        Upscale.payments.global.throwPaymentError();
+                        toggleLoadIndicator(false);
+                        return;
+                    }
+                    log('paymentMethod id:' + result.paymentMethod.id);
+                    confirmCardPayment(stripe, paymentIntent.id, result.paymentMethod.id, secret).then(() => {
+                        log('Stripe payment completed');
+                    }).catch(() => {
+                        log('Error while processing Stripe payment');
+                        Upscale.payments.global.throwPaymentError();
+                    }).finally(() => {
+                        toggleLoadIndicator(false);
                     });
-                    
                 });
-                
             });
-    
+
         });
     }
 
-    const { stripe, card } = initStripe();
+    const {
+        stripe,
+        card
+    } = initStripe();
     listenOnSubmit(stripe, card);
-})();
+})(window.Upscale, window.Stripe);
+
+<style type="text/css">
+    .card-element {
+    padding: 10px;
+    }
+    .pay_button {
+        cursor: pointer;
+        user-select: none;
+        background-color: black;
+        border: 0;
+        border-radius: 4px;
+        color: white;
+        font-size: 16px;
+        font-family: Roboto;
+        padding: 0;
+        width: 100%;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;  
+        appearance: button;
+        -webkit-writing-mode: horizontal-tb !important;
+        text-rendering: auto;
+        letter-spacing: normal;
+        word-spacing: normal;
+        text-transform: none;
+        text-indent: 0px;
+        text-shadow: none;
+        text-align: center;
+        box-sizing: border-box;
+        margin: 0em;
+    }
+</style>
 
 <form id="payment-form" data-secret="${input.customFields.client_secret}">
-  <div id="card-element"></div>
+  <div id="card-element" class="card-element"></div>
   <div id="card-errors" role="alert"></div>
-  <button id="submit">Submit Payment</button>
+  <button id="submit" class="pay_button" type="submit">Submit Payment</button>
 </form>

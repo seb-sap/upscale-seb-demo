@@ -1,98 +1,39 @@
-**Stripe Hosted Fields**
+# Stripe Hosted Fields
 
-- Should we try continuity order?
-- Promotions
-- ...
+## Flow:
 
-1- Direct payment request
-200 OK
+1- Hosted fields initialization request:
+
+1st call:
+Create customer
+POST https://api.stripe.com/v1/customers
+    -> Response mapping - Retain: customer -> id
+
+2nd call:
+Create new PaymentIntent
 POST https://api.stripe.com/v1/payment_intents
+    -> Request body: customer -> existing field: Customer (custom field)
 
-Request:
-amount=13500&currency=USD
+2- Payment form configuration scripts
+Stripe JS - Stripe Elements
 
-* Fields to be added to update Payment Intent
-https://stripe.com/docs/api/payment_intents/create#create_payment_intent-customer
+Sequence:
+2.1- Init Stripe JS
+2.2- List submit button clic:
+    -> stripe.retrievePaymentIntent
+    -> stripe.createPaymentMethod -> // TODO: create on back-end?
+        From back-end, get error:
+        ```
+        BadRequest: 400 Bad Request: [{ "error": { "code": "parameter_missing", "doc_url": "https://stripe.com/docs/error-codes/parameter-missing", "message": "Missing required param: card.", "param": "card", "type": "invalid_request_error" } } ] 
+        ```
+    -> stripe.confirmCardPayment
+    -> Upscale.payments.submit
 
-- customer -> where can we get the data from?
-- metadata -> KV pair -> could be used to store customer internal Upscale ID  - https://stripe.com/docs/api/metadata
-You can specify up to 50 keys, with key names up to 40 characters long and values up to 500 characters long.
-- payment_method_types -> default card - make it customizable in JS
-- setup_future_usage -> ???
-- shipping        -> where can we get the data from?
-    .address
-    .name
-- capture_method -> automatic or manual -> make it configurable? in github we have auto-capture and deferred-capture - should we now create a new Hosted Fields collection with configurable - capture method?
+## Remaining TODOs
 
-Response sample:
-{
-    "id": "pi_...",
-    "object": "payment_intent",
-    "amount": 13500,
-    "amount_capturable": 0,
-    "amount_received": 0,
-    "application": null,
-    "application_fee_amount": null,
-    "canceled_at": null,
-    "cancellation_reason": null,
-    "capture_method": "automatic",
-    ...
-}
-
-200 OK
-POST https://sebastien-demo-approuter-caas2-sap-stage.cfapps.us10.hana.ondemand.com/consumer/payment-service/gateway/initiate
-
-Request:
-{
-    "orderId": "2092581759",
-    "resultURL": "https://544e2aaa00f1f6044aaadc8f1c9ba2b7.sebastien-demo.us10.hosting-staging.upscalecommerce.com/en-US/redirect-result/checkout/resume",
-    "cancelURL": "https://544e2aaa00f1f6044aaadc8f1c9ba2b7.sebastien-demo.us10.hosting-staging.upscalecommerce.com/en-US/redirect-result/checkout/resume",
-    "channel": "BROWSER",
-    "browserInfo": {
-        "colorDepth": 24,
-        "javaEnabled": false,
-        "javaScriptEnabled": true,
-        "language": "en-US",
-        "screenHeight": 1200,
-        "screenWidth": 1920,
-        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.61 Safari/537.36",
-        "timezoneOffset": 240,
-        "originUrl": "https://544e2aaa00f1f6044aaadc8f1c9ba2b7.sebastien-demo.us10.hosting-staging.upscalecommerce.com"
-    }
-}
-
-Response: 
-HTML from Upscale back-end (stripe JS).
-
-
-UI Form
-
--> POST https://sebastien-demo-approuter-caas2-sap-stage.cfapps.us10.hana.ondemand.com/consumer/payment-service/gateway/submit
-
-Stripe API: https://api.stripe.com/v1/payment_intents/${input.additionalData.paymentIntent}/confirm
-
-
-window.Upscale.payments.submit(submitBody)
--> POST https://sebastien-demo-approuter-caas2-sap-stage.cfapps.us10.hana.ondemand.com/consumer/payment-service/gateway/submit
-    {
-        additionalData: [{
-            {key: "paymentIntent", value: "..."}
-        }]
-    }
-
-https://api.stripe.com/v1/payment_intents
-
-https://api.stripe.com/v1/payment_intents/${input.additionalData.paymentIntent}/confirm
-
-curl https://api.stripe.com/v1/payment_intents \
-  -u ...: \
-  -d amount=2000 \
-  -d currency=cad \
-  -d "payment_method_types[]"=card
-
-
-# To create a PaymentIntent for confirmation, see our guide at: https://stripe.com/docs/payments/payment-intents/creating-payment-intents#creating-for-automatic
-
-curl https://api.stripe.com/v1/payment_intents/pi_3JXVOSIgtNFLzkSy0zN48Cuj/confirm \
-  -u ...: \
-  -d payment_method=pm_card_visa
+* test multi-browsers
+* support for google + apple pay?
+* test reauth + settlement, continuity.
+* test international cards and postal codes (france, us, canada, etc) & 3DS secure (success & error scenarios) https://stripe.com/docs/testing#regulatory-cards
+* localization of pay button? FRENCH
+* test order with 2 line items and ship one at a time to check the capture fund is correct
