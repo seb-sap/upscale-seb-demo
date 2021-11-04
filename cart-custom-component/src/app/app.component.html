@@ -1,0 +1,39 @@
+<div *ngIf="!canDisplay">
+	[cart custom component loading...]
+</div>
+<div *ngIf="canDisplay" (sizeChange) = setHeight($event)>
+	[cart custom component ready]
+	<pre>event type: {{eventType}}</pre>
+
+	<h4>componentContext:</h4>
+	<pre>{{componentContext | json}}</pre>
+
+	<h4>componentInitData:</h4>
+	<pre>{{componentInitData | json}}</pre>
+
+	<!-- Checkout only -->
+
+	<h4>checkoutComponentInitData:</h4>
+	<pre>{{checkoutComponentInitData | json}}</pre>
+
+	<h4>checkoutReview:</h4>
+	<pre>{{checkoutReview | json}}</pre>
+
+	<button (click)="sendFormEvent('VALID')" >Enable checkout</button>
+	<button (click)="sendFormEvent('INVALID')" >Disable checkout</button>
+	
+	<!-- Cart only -->
+
+	<h4>appAddedToCart:</h4>
+	<pre>{{appAddedToCart | json}}</pre>
+
+	<h4>cartOrderLineEdit:</h4>
+	<pre>{{cartOrderLineEdit | json}}</pre>
+
+	<h4>cartReset:</h4>
+	<pre>{{cartReset | json}}</pre>
+
+	<h4>cartOrderLineRemove:</h4>
+	<pre>{{cartOrderLineRemove | json}}</pre>
+
+</div>
